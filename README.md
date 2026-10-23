@@ -137,9 +137,3 @@ http://localhost:5173
 ```
 
 > Observação: a aplicação consome a API de autenticação na porta `3333`, então o backend deve estar em execução localmente.
-
-## Observações
-
-Este repositório foi deixado público para facilitar o acesso do professor e da avaliação.
-
-O projeto foi desenvolvido com foco em autenticação e recuperação de senha, seguindo o fluxo de validação, envio de e-mail e confirmação visual para o usuário.
