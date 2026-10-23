@@ -14,27 +14,98 @@ A aplicação inclui as telas e rotas relacionadas a:
 - Recuperação de senha
 - Confirmação de envio do e-mail de recuperação
 
-## Funcionalidades implementadas
+## Rotas principais
 
-- Tela de login em `/sign-in`
-- Tela de cadastro em `/sign-up`
-- Página de confirmação de cadastro em `/sign-up/finally-register`
-- Tela de recuperação de senha em `/forgot`
-- Página de confirmação de envio em `/forgot/send-email`
+```tsx
+import { createBrowserRouter } from 'react-router'
+import { SignIn } from './src/pages/auth/sign-in'
+import { SignUp } from './src/pages/auth/sign-up'
+import { FinallyRegister } from './src/pages/auth/finally-register'
+import { Forgot } from './src/pages/auth/forgot'
+import { ForgotCompleted } from './src/pages/auth/forgot-completed'
+
+export const router = createBrowserRouter([
+  { path: '/sign-in', element: <SignIn /> },
+  { path: '/sign-up', element: <SignUp /> },
+  { path: '/sign-up/finally-register', element: <FinallyRegister /> },
+  { path: '/forgot', element: <Forgot /> },
+  { path: '/forgot/send-email', element: <ForgotCompleted /> }
+])
+```
 
 ## Fluxo de recuperação de senha
 
-Ao preencher o e-mail na tela de recuperação, a aplicação envia uma requisição para a API:
+A tela de recuperação valida o e-mail e envia a requisição para a API:
 
-```ts
-fetch("http://localhost:3333/password/forgot", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ email: data.email })
+```tsx
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from 'sonner'
+import { useNavigate } from 'react-router'
+
+const forgotForm = z.object({
+  email: z.string().email('E-mail inválido')
 })
+
+type ForgotForm = z.infer<typeof forgotForm>
+
+export function Forgot() {
+  const navigate = useNavigate()
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting, errors, isValid }
+  } = useForm<ForgotForm>({
+    resolver: zodResolver(forgotForm),
+    mode: 'onChange'
+  })
+
+  async function handleForgot(data: ForgotForm) {
+    try {
+      const res = await fetch('http://localhost:3333/password/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email })
+      })
+
+      if (res.ok) {
+        toast.success('E-mail de recuperação enviado')
+        navigate('/forgot/send-email')
+      } else if (res.status === 404) {
+        toast.error('E-mail não cadastrado')
+      } else {
+        toast.error('Erro ao enviar o e-mail. Tente novamente.')
+      }
+    } catch (err) {
+      toast.error('Erro de conexão. Verifique a API.')
+    } finally {
+      reset()
+    }
+  }
+
+  return <form onSubmit={handleSubmit(handleForgot)}>{/* ... */}</form>
+}
 ```
 
-Se a resposta for bem-sucedida, o usuário é redirecionado para a tela de confirmação. Caso o e-mail não esteja cadastrado, é exibido um erro.
+## Tela de confirmação após envio
+
+```tsx
+import { Finally } from '../../components/finally'
+
+export function ForgotCompleted() {
+  return (
+    <Finally
+      title="Redefinição enviada!"
+      subtitle={`Boa, agora é só checar o e-mail que foi enviado para você redefinir sua senha e aproveitar os estudos.`}
+      titleButton="Voltar ao login"
+      path="/sign-in"
+    />
+  )
+}
+```
 
 ## Stack principal
 
@@ -71,4 +142,4 @@ http://localhost:5173
 
 Este repositório foi deixado público para facilitar o acesso do professor e da avaliação.
 
-Além disso, o texto do README foi atualizado para documentar melhor o projeto e facilitar a execução e compreensão do fluxo implementado.
+O projeto foi desenvolvido com foco em autenticação e recuperação de senha, seguindo o fluxo de validação, envio de e-mail e confirmação visual para o usuário.
